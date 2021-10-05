@@ -68,7 +68,6 @@ def compose(request):
         for recipient in recipients:
             email.recipients.add(recipient)
         email.save()
-    print("this has been sent and saved")
     return JsonResponse({"message": "Email sent successfully."}, status=201)
 
 
