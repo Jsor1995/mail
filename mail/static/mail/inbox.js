@@ -39,11 +39,11 @@ function load_mailbox(mailbox) {
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
 
    //Fetch mailbox emails
-   console.log("Are we in box")
+   //console.log("Are we in box")
    fetch(`/emails/${mailbox}`)
    .then(response => response.json())
    .then(emails => {
-     console.log(emails);
+     //console.log(emails);
     
      for (let i in emails) {
        //add in html
@@ -87,7 +87,7 @@ function send_mail() {
   })
   .then(response => response.json())
   .then(result => console.log(result))
-  console.log("went through API");
+  //console.log("went through API");
   load_mailbox("sent");
 }
 
@@ -96,7 +96,7 @@ function view_mail(id) {
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#mail-view').style.display = 'block';
 
-  console.log("checking if in view_mail");
+  //console.log("checking if in view_mail");
   fetch(`/emails/${id}`)
   .then(response => response.json())
   .then(email => {
@@ -119,13 +119,24 @@ function view_mail(id) {
     replyButton.className = "btn btn-sm btn-outline-primary";
     replyButton.id = "reply-button";
     replyButton.innerHTML = "Reply";
+    replyButton.onclick = function() {
+      reply_mail(email.id);
+    }
     header.appendChild(replyButton);
 
     archiveButton.className = "btn btn-sm btn-outline-primary";
     archiveButton.id = "archive-button";
-    archiveButton.innerHTML = "Archive";
+    if (email.archived == false) {
+      archiveButton.innerHTML = "Archive";
+      console.log("Here is johnny");
+    }
+    else {
+      archiveButton.innerHTML = "Unarchive";
+      console.log("where jonny");
+    }
+    
     archiveButton.onclick = function() {
-      archive_mail(id);
+      archive_mail(id, email.archived);
     }
     header.appendChild(archiveButton)
     entry.innerHTML = `<hr><p>${email.body}</p>`
@@ -133,9 +144,20 @@ function view_mail(id) {
     mailView.appendChild(header);
     mailView.appendChild(entry);    
   });
+  fetch(`/emails/${id}`,{
+    method: 'PUT',
+    body: JSON.stringify({
+      read: true
+    })
+  })
+}
 
   
-  function archive_mail(id) {
+function archive_mail(id, archive_bool) {
+  console.log(id);
+  console.log(typeof(archive_bool));
+  let archivebtn = document.getElementById("archive-button");
+  if (archive_bool == false) {
     console.log("archiving");
     fetch(`/emails/${id}`,{
       method: 'PUT',
@@ -143,5 +165,34 @@ function view_mail(id) {
         archived: true
       })
     })
-  };
+    archivebtn.innerHTML = "Unarchive";
+  }
+  else if (archive_bool == true) {
+    console.log("unarchiving");
+    fetch(`/emails/${id}`,{
+      method: 'PUT',
+      body: JSON.stringify({
+        archived: false
+      })
+    })
+    archivebtn.innerHTML = "Archive";
+  }
+  load_mailbox('inbox');
+}
+
+function reply_mail(id) {
+  //open compostion form
+  compose_email();
+
+  //fetch previous email info
+  fetch(`/emails/${id}`)
+  .then(response => response.json())
+  .then(email => {
+    console.log(email);
+    document.querySelector('#compose-recipients').value = email.sender;
+    document.querySelector('#compose-subject').value = `Re: ${email.subject}`;
+    document.querySelector('#compose-body').value = `On ${email.timestamp} ${email.sender} wrote: ${email.body}`;
+  });
+  //add values
+  
 }
